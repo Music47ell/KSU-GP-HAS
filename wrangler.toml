@@ -1,4 +1,4 @@
-name = "healthcare-appointments-system"
+name = "ksu-gp-has"
 main = "dist/_worker.js"
 compatibility_date = "2024-12-01"
 
