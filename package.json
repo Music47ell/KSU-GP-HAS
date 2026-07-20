@@ -7,8 +7,8 @@
     "start": "astro dev",
     "build": "astro check && astro build",
     "seed": "bun run scripts/seed.ts",
-    "preview": "wrangler pages dev ./dist",
-    "deploy": "wrangler pages deploy ./dist",
+    "preview": "wrangler dev",
+    "deploy": "wrangler deploy",
     "astro": "astro"
   },
   "dependencies": {
