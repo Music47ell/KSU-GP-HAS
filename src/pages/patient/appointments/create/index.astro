@@ -2,114 +2,109 @@
 import { supabase } from "@/lib/supabase";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/patient/Header.astro";
-const { cookies } = Astro;
+
+const { cookies, redirect } = Astro;
 
 const accessToken = cookies.get("sb-access-token");
 const refreshToken = cookies.get("sb-refresh-token");
 
 if (!accessToken || !refreshToken) {
-    return redirect("/");
+  return redirect("/");
 }
 
 const { data, error } = await supabase.auth.setSession({
-    refresh_token: refreshToken.value,
-    access_token: accessToken.value,
+  refresh_token: refreshToken.value,
+  access_token: accessToken.value,
 });
 
 if (error) {
-    cookies.delete("sb-access-token", {
-        path: "/",
-    });
-    cookies.delete("sb-refresh-token", {
-        path: "/",
-    });
-
-    return redirect("/");
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
+  return redirect("/");
 }
 
-async function fetchAvailableDoctors() {
-    try {
-        const { data, error } = await supabase
-            .from("doctors")
-            .select()
-            .eq("approved", "APPROVED")
-            .eq("status", "ONLINE");
-
-        if (error) {
-            return error;
-        }
-        return data;
-    } catch (error) {
-        return error;
-    }
-}
-
-const doctors = await fetchAvailableDoctors();
+const { data: doctors } = await supabase
+  .from("doctors")
+  .select()
+  .eq("approved", "APPROVED")
+  .eq("status", "ONLINE");
 
 const name = data?.user?.user_metadata?.name;
 ---
 
 <BaseLayout>
-    <div class="flex-grow container mx-auto px-4">
-        <Header title="Schedule an Appointment" />
-        <form
-            id="appointmentForm"
-            action="/api/appointment/create"
-            method="post"
-        >
-            <input
-                type="hidden"
-                id="patientId"
-                name="patient_id"
-                value={data?.user?.id}
-            />
-            <label for="patientName" class="block">Patient Name:</label>
-            <input
-                type="text"
-                id="patientName"
-                value={name}
-                disabled
-                class="bg-gray-300 block border border-gray-300 rounded px-4 py-2 mt-2 w-full"
-            /><br />
-            <label for="doctors" class="block mt-4">Choose a Doctor:</label>
-            <select
-                id="doctors"
-                name="doctor_id"
-                class="block border border-gray-300 rounded px-4 py-2 mt-2 w-full"
-            >
-                {
-                    doctors.map((doctor) => (
-                        <option value={doctor.user_id}>
-                            {doctor.name} - {doctor.fees} - {doctor.specialty}
-                        </option>
-                    ))
-                }
-            </select><br />
-            <label for="time" class="block mt-4"
-                >Preferred Appointment Time:</label
-            >
-            <input
-                type="datetime-local"
-                id="time"
-                name="time"
-                required
-                class="block border border-gray-300 rounded px-4 py-2 mt-2 w-full"
-            /><br />
+  <Header title="Schedule an Appointment" />
 
-            <label for="purpose" class="block mt-4">Appointment Purpose:</label>
-            <input
-                type="text"
-                id="purpose"
-                name="purpose"
-                required
-                class="block border border-gray-300 rounded px-4 py-2 mt-2 w-full"
-            /><br />
+  <main class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-8">
+    <div class="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+      <form action="/api/appointment/create" method="post" class="space-y-6">
+        <input type="hidden" name="patient_id" value={data?.user?.id} />
 
-            <button
-                type="submit"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-4"
-                >Schedule Appointment</button
-            >
-        </form>
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Patient Name</label>
+          <input
+            type="text"
+            value={name}
+            disabled
+            class="mt-1 block w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500"
+          />
+        </div>
+
+        <div>
+          <label for="doctors" class="block text-sm font-medium text-gray-700">Choose a Doctor</label>
+          <select
+            id="doctors"
+            name="doctor_id"
+            required
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          >
+            <option value="" disabled selected>Select a doctor</option>
+            {doctors?.map((doctor) => (
+              <option value={doctor.user_id}>
+                {doctor.name} &mdash; {doctor.specialty} (${doctor.fees})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label for="time" class="block text-sm font-medium text-gray-700">Preferred Appointment Time</label>
+          <input
+            type="datetime-local"
+            id="time"
+            name="time"
+            required
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          />
+        </div>
+
+        <div>
+          <label for="purpose" class="block text-sm font-medium text-gray-700">Purpose</label>
+          <input
+            type="text"
+            id="purpose"
+            name="purpose"
+            required
+            placeholder="Brief description of your visit"
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          />
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button
+            type="submit"
+            class="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          >
+            Schedule Appointment
+          </button>
+          <a
+            href="/patient/dashboard"
+            class="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50"
+          >
+            Cancel
+          </a>
+        </div>
+      </form>
     </div>
+  </main>
 </BaseLayout>

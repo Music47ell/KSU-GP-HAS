@@ -3,184 +3,151 @@ import { supabase } from "@/lib/supabase";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/patient/Header.astro";
 
-const { cookies } = Astro;
+const { cookies, redirect } = Astro;
 
 const accessToken = cookies.get("sb-access-token");
 const refreshToken = cookies.get("sb-refresh-token");
 
 if (!accessToken || !refreshToken) {
-    return redirect("/");
+  return redirect("/");
 }
 
 const { data, error } = await supabase.auth.setSession({
-    refresh_token: refreshToken.value,
-    access_token: accessToken.value,
+  refresh_token: refreshToken.value,
+  access_token: accessToken.value,
 });
 
 if (error) {
-    cookies.delete("sb-access-token", {
-        path: "/",
-    });
-    cookies.delete("sb-refresh-token", {
-        path: "/",
-    });
-
-    return redirect("/");
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
+  return redirect("/");
 }
 
 const { data: patient } = await supabase
-    .from("patients")
-    .select("user_id, name, dob, gender")
-    .eq("user_id", data?.user?.id)
-    .single();
+  .from("patients")
+  .select("user_id, name, dob, gender")
+  .eq("user_id", data?.user?.id)
+  .single();
 
 const { data: patientsAppointments, error: appointmentsError } = await supabase
-    .from("appointments")
-    .select("*")
-    .eq("patient_id", data?.user?.id);
+  .from("appointments")
+  .select("*")
+  .eq("patient_id", data?.user?.id);
 
 const { data: doctorsData } = await supabase.from("doctors").select("*");
+
+function getAge(dob: string) {
+  return new Date().getFullYear() - new Date(dob).getFullYear();
+}
+
+function formatTurkeyTime(utcIso: string) {
+  const d = new Date(utcIso);
+  const turkey = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  return turkey.toISOString().replace("T", " ").slice(0, 19);
+}
 ---
 
 <BaseLayout>
-    <div class="flex-grow container mx-auto px-4">
-        <Header title="Patient Dashboard" />
-        <div class="mt-4">
-            <div class="mt-8">
-                <table class="w-full mt-4">
-                    <tbody>
-                        <tr class="border bg-gray-100">
-                            <td class="px-4 py-2 border font-semibold">Name:</td
-                            >
-                            <td class="px-4 py-2 border">{patient?.name}</td>
-                        </tr>
-                        <tr class="border bg-gray-200">
-                            <td class="px-4 py-2 border font-semibold"
-                                >Date of Birth:</td
-                            >
-                            <td class="px-4 py-2 border">{patient?.dob}</td>
-                        </tr>
-                        <tr class="border bg-gray-100">
-                            <td class="px-4 py-2 border font-semibold">Age:</td>
-                            <td class="px-4 py-2 border">
-                                {
-                                    new Date().getFullYear() -
-                                        new Date(patient?.dob).getFullYear()
-                                }</td
-                            >
-                        </tr>
-                        <tr class="border bg-gray-200">
-                            <td class="px-4 py-2 border font-semibold"
-                                >Gender:</td
-                            >
-                            <td class="px-4 py-2 border">{patient?.gender}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <hr class="my-4 border-t border-gray-300" />
-            {
-                appointmentsError ? (
-                    <p class="text-red-500 mt-4">
-                        There was an error fetching your appointments.
-                    </p>
-                ) : (
-                    <div class="mt-4">
-                        <h2 class="text-xl font-bold">Appointments</h2>
-                        <div class="mt-2">
-                            <table class="w-full mt-4">
-                                <thead>
-                                    <tr>
-                                        <th class="px-4 py-2 border">Doctor</th>
-                                        <th class="px-4 py-2 border">
-                                            Specialty
-                                        </th>
-                                        <th class="px-4 py-2 border">
-                                            Purpose
-                                        </th>
-                                        <th class="px-4 py-2 border">
-                                            Date/Time
-                                        </th>
-                                        <th class="px-4 py-2 border">Status</th>
-                                        <th class="px-4 py-2 border">Modify</th>
-                                        <th class="px-4 py-2 border">Delete</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {patientsAppointments.map((appointment) => {
-                                        const doctor = doctorsData?.find(
-                                            (doctor) =>
-                                                doctor?.user_id ===
-                                                appointment?.doctor_id,
-                                        );
+  <Header title="Patient Dashboard" />
 
-                                        var utcTime = new Date(
-                                            appointment?.time,
-                                        );
-                                        var turkeyOffset = 3 * 60;
-                                        var turkeyTime = new Date(
-                                            utcTime.getTime() +
-                                                turkeyOffset * 60000,
-                                        );
-                                        var formattedTime = turkeyTime
-                                            .toISOString()
-                                            .replace("T", " ")
-                                            .slice(0, 19);
-
-                                        return (
-                                            <tr class="border">
-                                                <td class="px-4 py-2 border">
-                                                    {doctor?.name}
-                                                </td>
-                                                <td class="px-4 py-2 border">
-                                                    {doctor?.specialty}
-                                                </td>
-                                                <td class="px-4 py-2 border">
-                                                    {appointment?.purpose}
-                                                </td>
-                                                <td class="px-4 py-2 border">
-                                                    {formattedTime}
-                                                </td>
-                                                <td class="px-4 py-2 border">
-                                                    {appointment?.status}
-                                                </td>
-                                                <td class="px-4 py-2 border">
-                                                    <a
-                                                        href={`/patient/appointments/edit/${appointment?.id}`}
-                                                        class="text-blue-500"
-                                                    >
-                                                        Edit
-                                                    </a>
-                                                </td>
-                                                <td class="px-4 py-2 border">
-                                                    <form
-                                                        action="/api/appointment/delete"
-                                                        method="post"
-                                                    >
-                                                        <input
-                                                            type="hidden"
-                                                            name="appointment_id"
-                                                            value={
-                                                                appointment?.id
-                                                            }
-                                                        />
-                                                        <button
-                                                            type="submit"
-                                                            class="text-red-500"
-                                                        >
-                                                            Delete
-                                                        </button>
-                                                    </form>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )
-            }
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Profile Card -->
+    <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">My Profile</h2>
+      <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Name</dt>
+          <dd class="mt-1 text-sm text-gray-900">{patient?.name}</dd>
         </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Date of Birth</dt>
+          <dd class="mt-1 text-sm text-gray-900">{patient?.dob}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Age</dt>
+          <dd class="mt-1 text-sm text-gray-900">{patient?.dob ? getAge(patient.dob) : "-"}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Gender</dt>
+          <dd class="mt-1 text-sm text-gray-900">{patient?.gender}</dd>
+        </div>
+      </dl>
     </div>
+
+    <!-- Appointments Section -->
+    <div class="mt-8">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-900">My Appointments</h2>
+        <a
+          href="/patient/appointments/create"
+          class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-medium text-white transition-all hover:bg-primary-700"
+        >
+          + New Appointment
+        </a>
+      </div>
+
+      {appointmentsError ? (
+        <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-100">
+          There was an error fetching your appointments.
+        </div>
+      ) : patientsAppointments?.length === 0 ? (
+        <div class="rounded-xl bg-gray-50 p-8 text-center text-sm text-gray-500 ring-1 ring-gray-100">
+          No appointments yet. Book your first one!
+        </div>
+      ) : (
+        <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Doctor</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Specialty</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Purpose</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date/Time</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {patientsAppointments?.map((appointment) => {
+                const doctor = doctorsData?.find((d) => d?.user_id === appointment?.doctor_id);
+                return (
+                  <tr class="transition-colors hover:bg-gray-50">
+                    <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{doctor?.name}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">{doctor?.specialty}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate">{appointment?.purpose}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">{formatTurkeyTime(appointment?.time)}</td>
+                    <td class="whitespace-nowrap px-4 py-3">
+                      <span
+                        class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          appointment?.status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : appointment?.status === "cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {appointment?.status}
+                      </span>
+                    </td>
+                    <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                      <a
+                        href={`/patient/appointments/edit/${appointment?.id}`}
+                        class="font-medium text-primary-600 hover:text-primary-700 mr-3"
+                      >
+                        Edit
+                      </a>
+                      <form action="/api/appointment/delete" method="post" class="inline">
+                        <input type="hidden" name="appointment_id" value={appointment?.id} />
+                        <button type="submit" class="font-medium text-red-600 hover:text-red-700">Delete</button>
+                      </form>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </main>
 </BaseLayout>

@@ -3,152 +3,142 @@ import { supabase } from "@/lib/supabase";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/doctor/Header.astro";
 
-const { cookies } = Astro;
+const { cookies, redirect } = Astro;
 
 const accessToken = cookies.get("sb-access-token");
 const refreshToken = cookies.get("sb-refresh-token");
 
 if (!accessToken || !refreshToken) {
-    return redirect("/");
+  return redirect("/");
 }
 
 const { data, error } = await supabase.auth.setSession({
-    refresh_token: refreshToken.value,
-    access_token: accessToken.value,
+  refresh_token: refreshToken.value,
+  access_token: accessToken.value,
 });
 
 if (error) {
-    cookies.delete("sb-access-token", {
-        path: "/",
-    });
-    cookies.delete("sb-refresh-token", {
-        path: "/",
-    });
-
-    return redirect("/");
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
+  return redirect("/");
 }
 
 const { data: doctor } = await supabase
-    .from("doctors")
-    .select("user_id, name, fees, specialty, approved, status")
-    .eq("user_id", data?.user?.id)
-    .single();
+  .from("doctors")
+  .select("user_id, name, fees, specialty, approved, status")
+  .eq("user_id", data?.user?.id)
+  .single();
 
-const { data: patientsAppointments, error: appointmentsError } = await supabase
-    .from("appointments")
-    .select("*")
-    .eq("doctor_id", data?.user?.id);
+const { data: appointments, error: appointmentsError } = await supabase
+  .from("appointments")
+  .select("*")
+  .eq("doctor_id", data?.user?.id);
 
 const { data: patients } = await supabase.from("patients").select("*");
+
+function formatTurkeyTime(utcIso: string) {
+  const d = new Date(utcIso);
+  const turkey = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+  return turkey.toISOString().replace("T", " ").slice(0, 19);
+}
 ---
 
 <BaseLayout>
-    <div class="flex-grow container mx-auto px-4">
-        <div class="container mx-auto">
-            <Header title="Doctor Dashboard" userId={doctor?.user_id} />
-            <div class="mt-4">
-                <div class="mt-8">
-                    <table class="w-full mt-4">
-                        <tbody>
-                            <tr class="border bg-gray-100">
-                                <td class="px-4 py-2 border font-semibold"
-                                    >Name:</td
-                                >
-                                <td class="px-4 py-2 border">{doctor?.name}</td>
-                            </tr>
-                            <tr class="border bg-gray-200">
-                                <td class="px-4 py-2 border font-semibold"
-                                    >Specialty:</td
-                                >
-                                <td class="px-4 py-2 border"
-                                    >{doctor?.specialty}</td
-                                >
-                            </tr>
-                            <tr class="border bg-gray-100">
-                                <td class="px-4 py-2 border font-semibold"
-                                    >Fees:</td
-                                >
-                                <td class="px-4 py-2 border">{doctor?.fees}</td>
-                            </tr>
-                            <tr class="border bg-gray-200">
-                                <td class="px-4 py-2 border font-semibold"
-                                    >Approved:</td
-                                >
-                                <td class="px-4 py-2 border"
-                                    >{doctor?.approved}</td
-                                >
-                            </tr>
-                            <tr class="border bg-gray-100">
-                                <td class="px-4 py-2 border font-semibold"
-                                    >Status:</td
-                                >
-                                <td class="px-4 py-2 border"
-                                    >{doctor?.status}</td
-                                >
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <hr class="my-4 border-t border-gray-300" />
-            {
-                appointmentsError ? (
-                    <p class="text-red-500 mt-8">
-                        There was an error fetching your appointments.
-                    </p>
-                ) : (
-                    <div class="mt-8">
-                        <h2 class="text-2xl font-bold mb-4">Appointments</h2>
-                        <table class="w-full appointment-table border border-collapse">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-2 border">Patient</th>
-                                    <th class="px-4 py-2 border">Purpose</th>
-                                    <th class="px-4 py-2 border">Date/Time</th>
-                                    <th class="px-4 py-2 border">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {patientsAppointments.map((appointment) => {
-                                    var utcTime = new Date(appointment?.time);
-                                    var turkeyOffset = 3 * 60;
-                                    var turkeyTime = new Date(
-                                        utcTime.getTime() +
-                                            turkeyOffset * 60000,
-                                    );
-                                    var formattedTime = turkeyTime
-                                        .toISOString()
-                                        .replace("T", " ")
-                                        .slice(0, 19);
+  <Header title="Doctor Dashboard" userId={doctor?.user_id} />
 
-                                    return (
-                                        <tr class="border">
-                                            <td class="px-4 py-2 border">
-                                                {
-                                                    patients?.find(
-                                                        (patient) =>
-                                                            patient?.user_id ===
-                                                            appointment?.patient_id,
-                                                    )?.name
-                                                }
-                                            </td>
-                                            <td class="px-4 py-2 border">
-                                                {appointment?.purpose}
-                                            </td>
-                                            <td class="px-4 py-2 border">
-                                                {formattedTime}
-                                            </td>
-                                            <td class="px-4 py-2 border">
-                                                {appointment?.status}
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                )
-            }
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Profile Card -->
+    <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-gray-900">My Profile</h2>
+        <a
+          href={`/doctor/profile/${doctor?.user_id}`}
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50"
+        >
+          Edit Profile
+        </a>
+      </div>
+      <dl class="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Name</dt>
+          <dd class="mt-1 text-sm text-gray-900">{doctor?.name}</dd>
         </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Specialty</dt>
+          <dd class="mt-1 text-sm text-gray-900">{doctor?.specialty}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Fee</dt>
+          <dd class="mt-1 text-sm text-gray-900">${doctor?.fees}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Status</dt>
+          <dd class="mt-1">
+            <span
+              class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                doctor?.status === "ONLINE"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {doctor?.status}
+            </span>
+          </dd>
+        </div>
+      </dl>
     </div>
+
+    <!-- Appointments Section -->
+    <div class="mt-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Appointments</h2>
+
+      {appointmentsError ? (
+        <div class="rounded-xl bg-red-50 p-4 text-sm text-red-700 ring-1 ring-red-100">
+          There was an error fetching your appointments.
+        </div>
+      ) : appointments?.length === 0 ? (
+        <div class="rounded-xl bg-gray-50 p-8 text-center text-sm text-gray-500 ring-1 ring-gray-100">
+          No appointments scheduled yet.
+        </div>
+      ) : (
+        <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Patient</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Purpose</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Date/Time</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {appointments?.map((apt) => {
+                const patientName = patients?.find((p) => p?.user_id === apt?.patient_id)?.name;
+                return (
+                  <tr class="transition-colors hover:bg-gray-50">
+                    <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{patientName}</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">{apt?.purpose}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-600">{formatTurkeyTime(apt?.time)}</td>
+                    <td class="whitespace-nowrap px-4 py-3">
+                      <span
+                        class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          apt?.status === "completed"
+                            ? "bg-green-100 text-green-700"
+                            : apt?.status === "cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {apt?.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </main>
 </BaseLayout>

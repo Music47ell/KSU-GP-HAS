@@ -1,10 +1,15 @@
 ---
-
+const year = new Date().getFullYear();
 ---
 
-<div class="flex justify-center items-center p-4 gap-3">
-    Developed and designed by <a
-        href="https://www.news47ell.com"
-        class="text-blue-500 hover:underline">Ahmet ALMAZ</a
-    >
-</div>
+<footer class="mt-auto border-t border-gray-200 bg-white">
+  <div class="flex flex-col sm:flex-row justify-center items-center gap-1 px-6 py-4 text-sm text-gray-500">
+    <span>&copy; {year} Healthcare Appointment System.</span>
+    <span>
+      Developed by
+      <a href="https://ahmetalmaz.com" class="text-primary-600 hover:text-primary-700 font-medium transition-colors"
+        >Ahmet ALMAZ</a
+      >
+    </span>
+  </div>
+</footer>

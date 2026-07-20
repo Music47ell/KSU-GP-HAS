@@ -2,20 +2,23 @@
 const { title } = Astro.props;
 ---
 
-<div
-    class="flex flex-col md:flex-row items-center justify-between bg-gray-500 text-white p-4"
->
-    <div class="flex items-center mb-4 md:mb-0">
-        <a href="/admin/dashboard" class="text-blue-500">
-            <img src="/medical-team.png" alt="Logo" class="h-8 mr-4" />
-        </a>
-        <h1 class="text-2xl font-bold">{title}</h1>
+<header class="bg-white border-b border-gray-200 shadow-sm">
+  <div class="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 py-3">
+    <div class="flex items-center gap-3">
+      <a href="/admin/dashboard">
+        <img src="/medical-team.png" alt="HAS" class="h-9 w-auto" />
+      </a>
+      <h1 class="text-lg font-semibold text-gray-900">{title}</h1>
     </div>
-    <div class="flex items-center">
-        <form action="/api/auth/signout" class="inline">
-            <button type="submit" class="font-bold py-2 px-4 rounded"
-                >Sign out</button
-            >
-        </form>
-    </div>
-</div>
+    <nav class="flex items-center gap-4">
+      <form action="/api/auth/signout" class="inline">
+        <button
+          type="submit"
+          class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50"
+        >
+          Sign Out
+        </button>
+      </form>
+    </nav>
+  </div>
+</header>

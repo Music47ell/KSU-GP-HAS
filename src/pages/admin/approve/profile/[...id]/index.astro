@@ -3,89 +3,79 @@ import { supabase } from "@/lib/supabase";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/admin/Header.astro";
 
-const { cookies } = Astro;
+const { cookies, redirect } = Astro;
 const { id } = Astro.params;
 
 const accessToken = cookies.get("sb-access-token");
 const refreshToken = cookies.get("sb-refresh-token");
 
 if (!accessToken || !refreshToken) {
-    return redirect("/");
+  return redirect("/");
 }
 
 const { error } = await supabase.auth.setSession({
-    refresh_token: refreshToken.value,
-    access_token: accessToken.value,
+  refresh_token: refreshToken.value,
+  access_token: accessToken.value,
 });
 
 if (error) {
-    cookies.delete("sb-access-token", {
-        path: "/",
-    });
-    cookies.delete("sb-refresh-token", {
-        path: "/",
-    });
-
-    return redirect("/");
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
+  return redirect("/");
 }
 
 const { data: doctor } = await supabase
-    .from("doctors")
-    .select("user_id, name, approved")
-    .eq("user_id", id)
-    .single();
-
-const user_id = doctor?.user_id || "";
-const name = doctor?.name || "";
+  .from("doctors")
+  .select("user_id, name, approved")
+  .eq("user_id", id)
+  .single();
 ---
 
 <BaseLayout>
-    <div class="flex-grow container mx-auto px-4">
-        <div class="container mx-auto">
-            <Header title="Edit Doctor Profile" />
-            <form class="mt-4" action="/api/admin/approve" method="POST">
-                <input type="hidden" name="doctor_id" value={user_id} />
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700"
-                        >Name</label
-                    >
-                    <input
-                        type="text"
-                        name="name"
-                        value={name}
-                        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                        readonly
-                    />
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700"
-                        >Approve</label
-                    >
-                    <select
-                        name="approved"
-                        class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
-                    >
-                        <option value="APPROVED">Yes</option>
-                        <option value="DENIED">No</option>
-                    </select>
-                </div>
-                <div class="mt-4">
-                    <button
-                        type="submit"
-                        class="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                        Update
-                    </button>
-                </div>
-                <div class="mt-4">
-                    <a
-                        href="/admin/dashboard"
-                        class="flex w-full justify-center rounded-md border border-transparent bg-gray-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                    >
-                        Go Back
-                    </a>
-                </div>
-            </form>
+  <Header title="Review Doctor" />
+
+  <main class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-8">
+    <div class="rounded-xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
+      <form action="/api/admin/approve" method="POST" class="space-y-6">
+        <input type="hidden" name="doctor_id" value={doctor?.user_id} />
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Doctor Name</label>
+          <input
+            type="text"
+            value={doctor?.name}
+            readonly
+            class="mt-1 block w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500"
+          />
         </div>
-    </div></BaseLayout
->
+
+        <div>
+          <label for="approved" class="block text-sm font-medium text-gray-700">Approval Decision</label>
+          <select
+            id="approved"
+            name="approved"
+            class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+          >
+            <option value="APPROVED">Approve</option>
+            <option value="DENIED">Deny</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button
+            type="submit"
+            class="rounded-lg bg-primary-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+          >
+            Submit
+          </button>
+          <a
+            href="/admin/dashboard"
+            class="rounded-lg border border-gray-300 px-6 py-2.5 text-sm font-medium text-gray-700 transition-all hover:bg-gray-50"
+          >
+            Go Back
+          </a>
+        </div>
+      </form>
+    </div>
+  </main>
+</BaseLayout>

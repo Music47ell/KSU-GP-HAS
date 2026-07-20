@@ -13,6 +13,9 @@ yarn-error.log*
 pnpm-debug.log*
 
 
+# bun lockfile
+bun.lock
+
 # environment variables
 .env
 .env.production

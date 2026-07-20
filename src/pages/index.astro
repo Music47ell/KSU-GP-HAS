@@ -3,64 +3,66 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 ---
 
 <BaseLayout>
-    <div class="flex justify-end items-center p-4">
-        <span class="mr-2">New User?</span>
-        <a
-            href="/patient/signup"
-            class="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
-            >Patient</a
-        >
-        <a
-            href="/doctor/signup"
-            class="cursor-pointer bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            >Doctor</a
-        >
+  <div class="flex min-h-screen flex-col">
+    <div class="flex justify-end items-center gap-3 px-6 py-4">
+      <span class="text-sm text-gray-500">New User?</span>
+      <a
+        href="/patient/signup"
+        class="inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700"
+      >
+        Patient
+      </a>
+      <a
+        href="/doctor/signup"
+        class="inline-flex items-center rounded-lg border border-primary-600 px-4 py-2 text-sm font-semibold text-primary-600 transition-all hover:bg-primary-50"
+      >
+        Doctor
+      </a>
     </div>
-    <div class="flex-grow flex justify-center items-center">
-        <div class="max-w-md w-full">
-            <div class="text-center">
-                <img
-                    src="/medical-team.png"
-                    alt="Logo"
-                    class="w-32 mx-auto mb-8"
-                />
-                <form action="/api/auth/signin" method="post">
-                    <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
-                        <div class="mb-4">
-                            <label
-                                class="block text-gray-700 text-sm font-bold mb-2"
-                                for="email">Email</label
-                            >
-                            <input
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                type="email"
-                                name="email"
-                                id="email"
-                            />
-                        </div>
-                        <div class="mb-6">
-                            <label
-                                class="block text-gray-700 text-sm font-bold mb-2"
-                                for="password">Password</label
-                            >
-                            <input
-                                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                type="password"
-                                name="password"
-                                id="password"
-                            />
-                        </div>
-                        <div class="flex items-center justify-center">
-                            <button
-                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                                type="submit"
-                            >
-                                Sign In
-                            </button>
-                        </div>
-                    </div>
-                </form>
+
+    <div class="flex flex-1 items-center justify-center px-4 py-12">
+      <div class="w-full max-w-md">
+        <div class="rounded-2xl bg-white p-8 shadow-lg ring-1 ring-gray-100">
+          <div class="text-center">
+            <img src="/medical-team.png" alt="Healthcare Appointment System" class="mx-auto h-24 w-auto mb-6" />
+            <h2 class="text-2xl font-bold text-gray-900">Welcome Back</h2>
+            <p class="mt-1 text-sm text-gray-500">Sign in to your account</p>
+          </div>
+
+          <form action="/api/auth/signin" method="post" class="mt-8 space-y-5">
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                required
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                placeholder="you@example.com"
+              />
             </div>
+
+            <div>
+              <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+              <input
+                type="password"
+                name="password"
+                id="password"
+                required
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 transition-colors focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                placeholder="Enter your password"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              Sign In
+            </button>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
 </BaseLayout>

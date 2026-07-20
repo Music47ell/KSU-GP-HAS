@@ -2,146 +2,128 @@
 import { supabase } from "@/lib/supabase";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Header from "@/components/admin/Header.astro";
-const { cookies } = Astro;
+
+const { cookies, redirect } = Astro;
 
 const accessToken = cookies.get("sb-access-token");
 const refreshToken = cookies.get("sb-refresh-token");
 
 if (!accessToken || !refreshToken) {
-    return redirect("/");
+  return redirect("/");
 }
 
 const { data, error } = await supabase.auth.setSession({
-    refresh_token: refreshToken.value,
-    access_token: accessToken.value,
+  refresh_token: refreshToken.value,
+  access_token: accessToken.value,
 });
 
 if (error) {
-    cookies.delete("sb-access-token", {
-        path: "/",
-    });
-    cookies.delete("sb-refresh-token", {
-        path: "/",
-    });
-
-    return redirect("/");
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
+  return redirect("/");
 }
 
 const { data: admin } = await supabase
-    .from("admins")
-    .select("user_id, name")
-    .eq("user_id", data?.user?.id)
-    .single();
+  .from("admins")
+  .select("user_id, name")
+  .eq("user_id", data?.user?.id)
+  .single();
 
 const { data: deniedDoctors } = await supabase
-    .from("doctors")
-    .select("*")
-    .eq("approved", "DENIED");
+  .from("doctors")
+  .select("*")
+  .eq("approved", "DENIED");
 
 const { data: doctors } = await supabase
-    .from("doctors")
-    .select("*")
-    .eq("approved", "PENDING");
+  .from("doctors")
+  .select("*")
+  .eq("approved", "PENDING");
 ---
 
 <BaseLayout>
-    <div class="flex-grow container mx-auto px-4">
-        <div class="container mx-auto">
-            <Header title="Admin Dashboard" />
-            <div class="mt-4">
-                <div class="mt-8">
-                    <table class="w-full mt-4">
-                        <tbody>
-                            <tr class="border bg-gray-100">
-                                <td class="px-4 py-2 border font-semibold"
-                                    >Name:</td
-                                >
-                                <td class="px-4 py-2 border">{admin?.name}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <hr class="my-4 border-t border-gray-300" />
-            <div class="mt-8">
-                <h2 class="text-2xl font-bold mb-4">
-                    Doctors Waiting for Approval
-                </h2>
-                <table class="w-full mt-4">
-                    <thead>
-                        <tr class="border bg-gray-100">
-                            <th class="px-4 py-2 border font-semibold">Name</th>
-                            <th class="px-4 py-2 border font-semibold"
-                                >Speciality</th
-                            >
-                            <th class="px-4 py-2 border font-semibold"
-                                >Action</th
-                            >
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            doctors?.map((doctor) => (
-                                <tr>
-                                    <td class="px-4 py-2 border">
-                                        {doctor?.name}
-                                    </td>
-                                    <td class="px-4 py-2 border">
-                                        {doctor?.specialty}
-                                    </td>
-                                    <td class="px-4 py-2 border">
-                                        <a
-                                            href={`/admin/approve/profile/${doctor?.user_id}`}
-                                            class="text-blue-500"
-                                        >
-                                            Edit Profile
-                                        </a>
-                                    </td>
-                                </tr>
-                            ))
-                        }
-                    </tbody>
-                </table>
-            </div>
-            <hr class="my-4 border-t border-gray-300" />
-            <div class="mt-8">
-                <h2 class="text-2xl font-bold mb-4">Denied Doctors</h2>
-                <table class="w-full mt-4">
-                    <thead>
-                        <tr class="border bg-gray-100">
-                            <th class="px-4 py-2 border font-semibold">Name</th>
-                            <th class="px-4 py-2 border font-semibold"
-                                >Speciality</th
-                            >
-                            <th class="px-4 py-2 border font-semibold"
-                                >Action</th
-                            >
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {
-                            deniedDoctors?.map((doctor) => (
-                                <tr>
-                                    <td class="px-4 py-2 border">
-                                        {doctor?.name}
-                                    </td>
-                                    <td class="px-4 py-2 border">
-                                        {doctor?.specialty}
-                                    </td>
-                                    <td class="px-4 py-2 border">
-                                        <a
-                                            href={`/admin/approve/profile/${doctor?.user_id}`}
-                                            class="text-blue-500"
-                                        >
-                                            Edit Profile
-                                        </a>
-                                    </td>
-                                </tr>
-                            ))
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <Header title="Admin Dashboard" />
+
+  <main class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Admin Info -->
+    <div class="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+      <h2 class="text-lg font-semibold text-gray-900 mb-2">Welcome, {admin?.name}</h2>
+      <p class="text-sm text-gray-500">Manage doctor registrations and approvals.</p>
     </div>
+
+    <!-- Pending Doctors -->
+    <div class="mt-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Doctors Waiting for Approval</h2>
+      {doctors?.length === 0 ? (
+        <div class="rounded-xl bg-gray-50 p-8 text-center text-sm text-gray-500 ring-1 ring-gray-100">
+          No pending doctor registrations.
+        </div>
+      ) : (
+        <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Name</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Specialty</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {doctors?.map((doctor) => (
+                <tr class="transition-colors hover:bg-gray-50">
+                  <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{doctor?.name}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{doctor?.specialty}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                    <a
+                      href={`/admin/approve/profile/${doctor?.user_id}`}
+                      class="inline-flex items-center rounded-lg bg-primary-600 px-4 py-2 text-xs font-medium text-white transition-all hover:bg-primary-700"
+                    >
+                      Review
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+
+    <!-- Denied Doctors -->
+    <div class="mt-8">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Denied Doctors</h2>
+      {deniedDoctors?.length === 0 ? (
+        <div class="rounded-xl bg-gray-50 p-8 text-center text-sm text-gray-500 ring-1 ring-gray-100">
+          No denied doctor registrations.
+        </div>
+      ) : (
+        <div class="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Name</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Specialty</th>
+                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              {deniedDoctors?.map((doctor) => (
+                <tr class="transition-colors hover:bg-gray-50">
+                  <td class="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">{doctor?.name}</td>
+                  <td class="px-4 py-3 text-sm text-gray-600">{doctor?.specialty}</td>
+                  <td class="whitespace-nowrap px-4 py-3 text-right text-sm">
+                    <a
+                      href={`/admin/approve/profile/${doctor?.user_id}`}
+                      class="inline-flex items-center rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 transition-all hover:bg-gray-50"
+                    >
+                      Review
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </main>
 </BaseLayout>
