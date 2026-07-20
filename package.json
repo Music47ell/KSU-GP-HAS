@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && echo '_worker.js' > dist/.assetsignore",
     "seed": "bun run scripts/seed.ts",
     "preview": "wrangler dev",
     "deploy": "wrangler deploy",
