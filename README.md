@@ -18,7 +18,7 @@ A modern, multi-role healthcare appointment management platform. Patients book a
 | Styling | [Tailwind CSS](https://tailwindcss.com) 3 |
 | Database & Auth | [Supabase](https://supabase.com) (PostgreSQL + Auth) |
 | Runtime | [Bun](https://bun.sh) |
-| Hosting | [Cloudflare Workers](https://workers.cloudflare.com) |
+| Hosting | [Cloudflare Pages](https://pages.cloudflare.com) |
 
 ## Getting Started
 
@@ -26,7 +26,7 @@ A modern, multi-role healthcare appointment management platform. Patients book a
 
 - [Bun](https://bun.sh) 1.x
 - A Supabase project
-- A Cloudflare account (for deployment)
+- A Cloudflare account (for Pages deployment)
 
 ### Setup
 
@@ -71,8 +71,8 @@ After seeding, sign in with:
 ```bash
 bun dev             # Dev server at localhost:4321
 bun run build       # Type-check + build for production
-bun run preview     # Preview the built worker locally
-bun run deploy      # Deploy to Cloudflare Workers
+bun run preview     # Preview locally with Wrangler
+bun run deploy      # Deploy to Cloudflare Pages
 ```
 
 ## Project Structure

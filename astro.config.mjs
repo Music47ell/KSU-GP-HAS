@@ -8,5 +8,5 @@ export default defineConfig({
   trailingSlash: "never",
   output: "server",
   integrations: [tailwind()],
-  adapter: cloudflare({ mode: "advanced" }),
+  adapter: cloudflare(),
 });
